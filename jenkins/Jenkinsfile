@@ -103,13 +103,14 @@ spec:
                               set -xe
 
                               mkdir -p /kaniko/.docker
-                              AUTH=$(printf '%s:%s' "$DOCKER_USER" "$DOCKER_PASS" | base64 | tr -d '\\n')
 
+                              # Configuración de Docker para Docker Hub usando username/password
                               cat > /kaniko/.docker/config.json <<EOF
                               {
                                 "auths": {
                                   "https://index.docker.io/v1/": {
-                                    "auth": "${AUTH}"
+                                    "username": "$DOCKER_USER",
+                                    "password": "$DOCKER_PASS"
                                   }
                                 }
                               }
@@ -122,7 +123,8 @@ spec:
                                 --context="$WORKSPACE/microservice" \
                                 --dockerfile="$WORKSPACE/microservice/Dockerfile" \
                                 --destination=docker.io/davidmauricio/microservice:${BUILD_NUMBER} \
-                                --cleanup
+                                --cleanup \
+                                --verbosity=debug
                             '''
                         }
                     }
