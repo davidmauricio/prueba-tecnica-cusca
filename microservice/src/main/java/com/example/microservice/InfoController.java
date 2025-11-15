@@ -7,20 +7,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class InfoController {
 
-    @Value("${app.local.config:default-local-config}")
+    @Value("${SECRET_FROM_VAULT:NO_SECRET_DEFINED_IN_CLUSTER_YET}")
+    private String secretFromVault;
+
+    @Value("${app.local.config:valor-config-local}")
     private String localConfig;
 
     @GetMapping("/secret")
-    public String secret() {
-        String secret = System.getenv("SECRET_FROM_VAULT");
-        if (secret == null) {
-            secret = "NO_SECRET_DEFINED";
-        }
-        return secret;
+    public Map<String, String> getSecret() {
+        return Map.of(
+                "secretFromVault", secretFromVault
+        );
     }
 
     @GetMapping("/config")
-    public String config() {
-        return localConfig;
+    public Map<String, String> getConfig() {
+        return Map.of(
+                "localConfig", localConfig
+        );
     }
 }
