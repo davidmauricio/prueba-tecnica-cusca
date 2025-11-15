@@ -89,36 +89,36 @@ spec:
                 }
             }
         }
-
+        
         stage('Build & Push Docker Image with Kaniko') {
             steps {
                 container('kaniko') {
                     script {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'dockerhub-creds',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: 'dockerhub-creds',
+                                usernameVariable: 'DOCKER_USER',
+                                passwordVariable: 'DOCKER_PASS'
+                            )
+                        ]) {
                             sh '''
                               set -xe
 
+                              echo "===== STAGE KANIKO: INICIANDO ====="
+
                               mkdir -p /kaniko/.docker
 
-                              # Configuración de Docker para Docker Hub usando username/password
-                              cat > /kaniko/.docker/config.json <<EOF
-                              {
-                                "auths": {
-                                  "https://index.docker.io/v1/": {
-                                    "username": "$DOCKER_USER",
-                                    "password": "$DOCKER_PASS"
-                                  }
-                                }
-                              }
-                              EOF
+                              # Configuración mínima de Docker Hub (sin heredoc)
+                              echo "CONFIGURANDO DOCKER HUB..."
+                              echo "{ \\"auths\\": { \\"https://index.docker.io/v1/\\": { \\"username\\": \\"$DOCKER_USER\\", \\"password\\": \\"$DOCKER_PASS\\" } } }" > /kaniko/.docker/config.json
+
+                              echo "Mostrando /kaniko/.docker/config.json"
+                              cat /kaniko/.docker/config.json || true
 
                               echo "Usando contexto: $WORKSPACE/microservice"
                               ls -R "$WORKSPACE/microservice" || true
 
+                              echo "===== EJECUTANDO KANIKO ====="
                               /kaniko/executor \
                                 --context="$WORKSPACE/microservice" \
                                 --dockerfile="$WORKSPACE/microservice/Dockerfile" \
