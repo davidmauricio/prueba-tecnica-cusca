@@ -1,0 +1,175 @@
+import groovy.json.JsonSlurper
+
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: jenkins-pro-agent
+spec:
+  serviceAccountName: default
+  containers:
+    - name: maven
+      image: maven:3.9-eclipse-temurin-17
+      command: ['cat']
+      tty: true
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command: ['cat']
+      tty: true
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+    - name: kubectl
+      image: lachlanevenson/k8s-kubectl:latest
+      command: ['cat']
+      tty: true
+      volumeMounts:
+        - name: kubeconfig
+          mountPath: /kube
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+          readOnly: false
+  volumes:
+    - name: kubeconfig
+      secret:
+        secretName: dev-kubeconfig
+    - name: kaniko-secret
+      emptyDir: {}
+"""
+        }
+    }
+
+    environment {
+        REGISTRY    = "docker.io/davidmauricio"
+        IMAGE_NAME  = "microservice"
+        DEV_NS      = "development"
+        DEV_DEPLOY  = "microservice"
+    }
+
+    stages {
+
+        stage('Read secret from Vault') {
+            steps {
+                container('maven') {
+                    script {
+                        withCredentials([string(credentialsId: 'vault-token', variable: 'VAULT_TOKEN')]) {
+                            def response = sh(
+                                script: '''
+                                  curl -s \
+                                    --header "X-Vault-Token: ${VAULT_TOKEN}" \
+                                    http://vault.vault:8200/v1/secret/data/microservice
+                                ''',
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Vault response: ${response}"
+
+                            def parser = new JsonSlurper()
+                            def json = parser.parseText(response)
+                            env.SECRET_FROM_VAULT = json.data.data.SECRET_VALUE
+                            echo "Secreto leído desde Vault (no se imprimirá en logs reales)."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build jar with Maven') {
+            steps {
+                container('maven') {
+                    sh """
+                      cd microservice
+                      echo "Usando SECRET_FROM_VAULT en el build: ${SECRET_FROM_VAULT}"
+                      mvn -q -DskipTests package
+                    """
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image with Kaniko') {
+            steps {
+                container('kaniko') {
+                    script {
+                        withCredentials([usernamePassword(
+                            credentialsId: 'dockerhub-creds',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )]) {
+                            sh '''
+                              set -xe
+
+                              mkdir -p /kaniko/.docker
+                              AUTH=$(printf '%s:%s' "$DOCKER_USER" "$DOCKER_PASS" | base64 | tr -d '\\n')
+
+                              cat > /kaniko/.docker/config.json <<EOF
+                              {
+                                "auths": {
+                                  "https://index.docker.io/v1/": {
+                                    "auth": "${AUTH}"
+                                  }
+                                }
+                              }
+                              EOF
+
+                              echo "Usando contexto: $WORKSPACE/microservice"
+                              ls -R "$WORKSPACE/microservice" || true
+
+                              /kaniko/executor \
+                                --context="$WORKSPACE/microservice" \
+                                --dockerfile="$WORKSPACE/microservice/Dockerfile" \
+                                --destination=docker.io/davidmauricio/microservice:${BUILD_NUMBER} \
+                                --cleanup
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Debug kubeconfig') {
+            steps {
+                container('kubectl') {
+                    sh """
+                      echo '=== DEBUG KUBECONFIG ==='
+                      ls -l /kube
+
+                      echo '=== kubectl config view ==='
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true config view
+
+                      echo '=== kubectl current-context ==='
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true config current-context
+
+                      echo '=== auth can-i (usando kubeconfig) ==='
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true auth can-i get deployments -n development || echo 'auth can-i fallo'
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Development Cluster') {
+            steps {
+                container('kubectl') {
+                    sh """
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true set image deployment/${DEV_DEPLOY} microservice=${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} -n ${DEV_NS}
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true rollout status deployment/${DEV_DEPLOY} -n ${DEV_NS}
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            container('kubectl') {
+                script {
+                    echo "Build falló. Puedes hacer rollback manual si lo necesitas:"
+                    echo "kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true rollout undo deployment/${DEV_DEPLOY} -n ${DEV_NS}"
+                }
+            }
+        }
+    }
+}
