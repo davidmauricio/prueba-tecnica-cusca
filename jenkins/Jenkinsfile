@@ -71,7 +71,7 @@ spec:
                             def parser = new JsonSlurper()
                             def json = parser.parseText(response)
                             env.SECRET_FROM_VAULT = json.data.data.SECRET_VALUE
-                            echo "Secreto leído desde Vault (no se imprimirá en logs reales)."
+                            echo "Secreto leído desde Vault"
                         }
                     }
                 }
@@ -156,8 +156,18 @@ spec:
             steps {
                 container('kubectl') {
                     sh """
-                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true set image deployment/${DEV_DEPLOY} microservice=${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} -n ${DEV_NS}
-                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true rollout status deployment/${DEV_DEPLOY} -n ${DEV_NS}
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true \
+                        set env deployment/${DEV_DEPLOY} \
+                        SECRET_FROM_VAULT='${SECRET_FROM_VAULT}' \
+                        -n ${DEV_NS}
+
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true \
+                        set image deployment/${DEV_DEPLOY} \
+                        microservice=${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -n ${DEV_NS}
+
+                      kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true \
+                        rollout status deployment/${DEV_DEPLOY} -n ${DEV_NS}
                     """
                 }
             }
@@ -168,7 +178,7 @@ spec:
         failure {
             container('kubectl') {
                 script {
-                    echo "Build falló. Puedes hacer rollback manual si lo necesitas:"
+                    echo "Build fallo"
                     echo "kubectl --kubeconfig=/kube/kubeconfig --insecure-skip-tls-verify=true rollout undo deployment/${DEV_DEPLOY} -n ${DEV_NS}"
                 }
             }
