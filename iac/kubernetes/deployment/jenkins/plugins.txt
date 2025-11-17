@@ -1,0 +1,17 @@
+kubernetes
+kubernetes-cli
+workflow-aggregator
+git
+git-client
+credentials
+plain-credentials
+config-file-provider
+blueocean
+pipeline-stage-view
+workflow-job
+workflow-cps
+workflow-api
+workflow-support
+workflow-multibranch
+workflow-scm-step
+script-security

@@ -16,12 +16,9 @@ spec:
       serviceAccountName: default
       containers:
         - name: jenkins
-          image: jenkins/jenkins:lts-jdk17
+          image: jenkins/jenkins:lts
           ports:
             - containerPort: 8080
-              name: http
-            - containerPort: 50000
-              name: agent
           env:
             - name: JAVA_OPTS
               value: "-Djenkins.install.runSetupWizard=false"
@@ -37,3 +34,16 @@ spec:
               port: 8080
             initialDelaySeconds: 90
             periodSeconds: 30
+          volumeMounts:
+            - name: jenkins-home
+              mountPath: /var/jenkins_home
+            - name: plugins
+              mountPath: /usr/share/jenkins/ref/plugins.txt
+              subPath: plugins.txt
+      volumes:
+        - name: jenkins-home
+          emptyDir: {}
+        - name: plugins
+          configMap:
+            name: jenkins-plugins
+
