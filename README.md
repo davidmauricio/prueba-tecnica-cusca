@@ -49,6 +49,9 @@ Digitar `yes` cuando terraform pregunte. Tambien se puede ejecutar  `terraform a
 `kubectl config use-context kind-deployment-cluster` para seleccionar cluster de deployement
 `kubectl get pods -n ci -w` ver el pod de jenkins con el namespace ci, debe estar en estado "Runing"
 
+<img width="628" height="257" alt="image" src="https://github.com/user-attachments/assets/e3f49279-0913-4f52-91f1-0311b462faf4" />
+
+
 Ejecutar `kubectl config view --minify --flatten --context kind-dev-cluster > dev-kubeconfig` para crear el secret de jenkins que se usa para ejecutar kubectl.
 Esto crea el archivo y modificamos la ruta del server por  `https://host.docker.internal` y el puerto que nos pone, solo se edita la url
 Luego ejecutamos  `kubectl --context kind-deployment-cluster -n ci create secret generic dev-kubeconfig --from-file=kubeconfig=dev-kubeconfig` para crear el secret en el cluster de deployment
@@ -85,12 +88,21 @@ Luego ejecutamos  `kubectl --context kind-deployment-cluster -n ci create secret
 2. verificamos el loadbalancer  `kubectl --context kind-dev-cluster -n development get svc microservice-lb` se deberia ver el microservice de tipo load balancer
 3. Desde el navegador verificamos los endpoints
 
- `http://localhost:8080/secret` y  `http://localhost:8080/config`
+ `http://localhost:8080/secret`
+ <img width="383" height="163" alt="image" src="https://github.com/user-attachments/assets/a467fbda-7e60-42eb-b039-25c6464bfd76" />
+
+ y  `http://localhost:8080/config`
+ 
+ <img width="316" height="184" alt="image" src="https://github.com/user-attachments/assets/af99cdd5-15f5-40f3-9d0c-fffdc1677013" />
+
 
 ## Verificar secreto desde vault
 
 1. Levantamos el vault con namespace de este nombre `kubectl --context kind-deployment-cluster -n vault port-forward svc/vault 8200:8200`
 2. Desde otra terminal podemos hacer un CURL  `curl -H "X-Vault-Token: root"  http://127.0.0.1:8200/v1/secret/data/microservice`, deberia mostrar el secret desde vault
+
+
+<img width="968" height="129" alt="image" src="https://github.com/user-attachments/assets/b0f0ba28-3ad3-4da9-9d15-65568c721807" />
 
 
 
