@@ -41,7 +41,10 @@ Pipeline de jenkins:
 
 Digitar `yes` cuando terraform pregunte. Tambien se puede ejecutar  `terraform apply -auto-approve` para evitar digitar  `yes`
 
-5. Verificar cluster creados `kubectl config get-contexts` 
+5. Verificar cluster creados `kubectl config get-contexts`
+<img width="864" height="78" alt="image" src="https://github.com/user-attachments/assets/07362108-1240-4a85-ac7b-73bee24be8df" />
+
+   
 
 ## Verificar y configuar jenkins
 
