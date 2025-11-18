@@ -88,10 +88,11 @@ Luego ejecutamos  `kubectl --context kind-deployment-cluster -n ci create secret
 2. verificamos el loadbalancer  `kubectl --context kind-dev-cluster -n development get svc microservice-lb` se deberia ver el microservice de tipo load balancer
 3. Desde el navegador verificamos los endpoints
 
- `http://localhost:8080/secret`
+`http://localhost:8080/secret`
+ 
  <img width="383" height="163" alt="image" src="https://github.com/user-attachments/assets/a467fbda-7e60-42eb-b039-25c6464bfd76" />
 
- y  `http://localhost:8080/config`
+`http://localhost:8080/config`
  
  <img width="316" height="184" alt="image" src="https://github.com/user-attachments/assets/af99cdd5-15f5-40f3-9d0c-fffdc1677013" />
 
@@ -103,6 +104,11 @@ Luego ejecutamos  `kubectl --context kind-deployment-cluster -n ci create secret
 
 
 <img width="968" height="129" alt="image" src="https://github.com/user-attachments/assets/b0f0ba28-3ad3-4da9-9d15-65568c721807" />
+
+## Diagrama Arquitectura
+
+<img width="479" height="795" alt="image" src="https://github.com/user-attachments/assets/d8746db1-dba7-4028-b1c1-1f3c92d8a24c" />
+
 
 
 
