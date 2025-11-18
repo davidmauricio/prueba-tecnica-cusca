@@ -14,16 +14,23 @@ Se lee el secreto desde vault, se inyecta como variable de entorno desde el pipe
 GET /secret - Secreto leido desde vault
 GET /config - Variable de configuracion local
 
+Pipeline de jenkins: 
+
+1. Se crear un job de tipo pipeline de jenkins
+2. Se lee el secret desde vault
+3. Hacemos la imagen de Docker del microservice en spring boot y la publicamos en el registry de Docker Hub, utilice Kaniko para este paso
+4. Deployamos el cluster de deployment
+
 
 ## Prerrequisitos
 
-Docker
-kind
-kubectl
-git o Github Desktop
-terraform
-Java 17 y Maven
-Acceso a Docker Hub (Actualmente configurado con la ruta docker.io/davidmauricio/microservice)
+1. Docker
+2. kind
+3. kubectl
+4. git o Github Desktop
+5. terraform
+6. Java 17 y Maven
+7. Acceso a Docker Hub (Actualmente configurado con la ruta docker.io/davidmauricio/microservice)
 
 ## Clonar repositorio de github y ejecutar terraform
 
