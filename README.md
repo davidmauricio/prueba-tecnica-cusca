@@ -86,6 +86,9 @@ Luego ejecutamos  `kubectl --context kind-deployment-cluster -n ci create secret
 
 1. digitamos `kubectl --context kind-dev-cluster -n development get pods` para ver los pods de development, deberian estar 2 en estado running 
 2. verificamos el loadbalancer  `kubectl --context kind-dev-cluster -n development get svc microservice-lb` se deberia ver el microservice de tipo load balancer
+
+<img width="818" height="202" alt="image" src="https://github.com/user-attachments/assets/db346f69-f2d8-4036-9b5d-9cbadecbee97" />
+
 3. Desde el navegador verificamos los endpoints
 
 `http://localhost:8080/secret`
